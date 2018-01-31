@@ -9,6 +9,7 @@ except ImportError:
 
 class Area(object):
     """Represents a Podio Area"""
+
     def __init__(self, transport):
         self.transport = transport
 
@@ -63,7 +64,11 @@ class Contact(Area):
         if type(attributes) != dict:
             return ApiErrorException('Must be of type dict')
         attributes = json.dumps(attributes)
-        return self.transport.POST(url='/contact/space/%d/' % space_id, body=attributes, type='application/json')
+        return self.transport.POST(url='/contact/space/%d/' % space_id, body=attributes,
+                                   type='application/json')
+
+    def get_contacts(self, **kwargs):
+        return self.transport.GET(url='/contact/', **kwargs)
 
 
 class Search(Area):
@@ -75,7 +80,8 @@ class Search(Area):
         if type(attributes) != dict:
             return ApiErrorException('Must be of type dict')
         attributes = json.dumps(attributes)
-        return self.transport.POST(url='/search/app/%d/' % app_id, body=attributes, type='application/json')
+        return self.transport.POST(url='/search/app/%d/' % app_id, body=attributes,
+                                   type='application/json')
 
 
 class Item(Area):
@@ -368,6 +374,7 @@ class Stream(Area):
 
     For details, see: https://developers.podio.com/doc/stream/
     """
+
     def find_all_by_app_id(self, app_id):
         """
         Returns the stream for the given app. This includes items from
@@ -575,7 +582,8 @@ class View(Area):
         :param include_standard_views: defaults to false. Set to true if you wish to include standard views.
         """
         include_standard = "true" if include_standard_views is True else "false"
-        return self.transport.GET(url='/view/app/{}/?include_standard_views={}'.format(app_id, include_standard))
+        return self.transport.GET(
+            url='/view/app/{}/?include_standard_views={}'.format(app_id, include_standard))
 
     def make_default(self, view_id):
         """
@@ -612,4 +620,3 @@ class View(Area):
         attribute_data = json.dumps(attributes)
         return self.transport.PUT(url='/view/{}'.format(view_id),
                                   body=attribute_data, type='application/json')
-

@@ -8,7 +8,6 @@ except ImportError:
 
 from .encode import multipart_encode
 
-
 import json
 
 
@@ -20,6 +19,7 @@ class OAuthToken(object):
     Do not modify its attributes manually Use the methods in the
     Podio API Connector, get_oauth_token and refresh_oauth_token
     """
+
     def __init__(self, resp):
         self.expires_in = resp['expires_in']
         self.access_token = resp['access_token']
@@ -42,6 +42,24 @@ class OAuthAuthorization(object):
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         response, data = h.request(domain + "/oauth/token", "POST",
                                    urlencode(body), headers=headers)
+        self.token = OAuthToken(_handle_response(response, data))
+
+    def __call__(self):
+        return self.token.to_headers()
+
+
+class OAuthRefreshTokenAuthorization(object):
+    """Generates headers for Podio OAuth2 Authorization from a refresh token."""
+
+    def __init__(self, client_id, client_secret, refresh_token, domain):
+        body = {'grant_type': 'refresh_token',
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'refresh_token': refresh_token}
+        http = Http(disable_ssl_certificate_validation=True)
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        response, data = http.request(domain + '/oauth/token', 'POST',
+                                      urlencode(body), headers=headers)
         self.token = OAuthToken(_handle_response(response, data))
 
     def __call__(self):
