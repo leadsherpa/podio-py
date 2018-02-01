@@ -6,16 +6,18 @@ Python wrapper for the Podio API.
 Example
 -------
 
-    from pypodio2 import api
-    from client_settings import *
+```python
+from pypodio2 import api
+from client_settings import *
 
-    c = api.OAuthClient(
-        client_id,
-        client_secret,
-        username,
-        password,    
-    )
-    print c.Item.find(22342)
+client = api.OAuthClient(
+    client_id,
+    client_secret,
+    username,
+    password,    
+)
+print(client.Item.find(22342))
+```
 
 Notes
 ------
@@ -23,9 +25,10 @@ Notes
 It is possible to override the default response handler by passing handler as
 a keyword argument to a transport function call. For example:
 
-    x = lambda x,y: (x,y)
-    result = c.Item.find(11007, basic=True, handler=x)
-    ($result, $data) #Returned info
+```python
+handler = lambda response, data: (response, data)
+response, data = client.Item.find(11007, basic=True, handler=handler)
+```
 
 Tests
 -----
