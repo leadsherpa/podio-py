@@ -351,6 +351,18 @@ class Space(Area):
         """
         return self.transport.GET(url='/org/%s/space/' % org_id)
 
+    def space_members(self, space_id):
+        """
+        Get a list of active members for a Space.
+        https://developers.podio.com/doc/space-members/get-members-of-space-22395
+        :param space_id: The unique ID for the space you're asking about
+        :type space_id: int
+        :type space_id: basestring
+        :return: A list of User object dictionaries.
+        :rtype: list
+        """
+        return self.transport.GET(url='/space/{}/member'.format(space_id))
+
     def create(self, attributes):
         """
         Create a new space
