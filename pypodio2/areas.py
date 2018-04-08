@@ -85,19 +85,36 @@ class Search(Area):
 
 
 class Item(Area):
-    def find(self, item_id, basic=False, **kwargs):
+    def find(self, item_id, **kwargs):
         """
-        Get item
-        
-        :param item_id: Item ID
-        :param basic: ?
+        Get an item using its absolute Podio id. This is sometimes contained
+        in responses as 'ref_id' or you can find it by viewing the item on
+        the Podio web application and choosing Developer Info from the navbar
+        dropdown at the top.
+        :param item_id: The absolute Podio id for the item
         :type item_id: int
-        :return: Item info
+        :return: Deeply-nested dictionary representing Podio item
         :rtype: dict
         """
-        if basic:
-            return self.transport.GET(url='/item/%d/basic' % item_id)
         return self.transport.GET(kwargs, url='/item/%d' % item_id)
+
+    def get_by_app_item_id(self, app_id, app_item_id):
+        """
+        Get an item using its app_id and its app_item_id.
+        The app_item_id is much easier to find, and is included in most
+        queries as the id_field. You can choose to show it on the web
+        interface under the wrench icon. For each app it starts with 1
+        and increments (so look for low numbers and you've got it).
+        :param app_id: Id of the app for the item.
+        :type app_id: int
+        :type app_id: basestring
+        :param app_item_id: Id of the item within the specified app
+        :type app_item_id: int
+        :type app_item_id: basestring
+        :return: Deeply-nested dictionary representing Podio item
+        :rtype: dict
+        """
+        return self.transport.GET(url=' /app/{}/item/{}'.format(app_id, app_item_id))
 
     def filter(self, app_id, attributes, **kwargs):
         if not isinstance(attributes, dict):
