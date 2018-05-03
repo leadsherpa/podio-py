@@ -652,3 +652,43 @@ class View(Area):
         attribute_data = json.dumps(attributes)
         return self.transport.PUT(url='/view/{}'.format(view_id),
                                   body=attribute_data, type='application/json')
+
+
+class Comment(Area):
+    def create(self, commentable_type, commentable_id, attributes):
+        """
+
+        :param commentable_type: str Either "Item" or "App"
+        :param commentable_id: int The unique id for the object to comment on
+        :param attributes: dict Key-Value pairs like "value"
+        :return:
+        """
+        attributes = json.dumps(attributes)
+        return self.transport.POST(url='/comment/%s/%s/' % (commentable_type, commentable_id),
+                                   body=attributes, type='application/json')
+
+    def add_comment_to_item(self, item_id, value):
+        """
+        Shortcut method to create a comment on an item, using all default
+          values except the comment text.
+        :param item_id: int The Podio id of the item.
+        :param value: str The text of the comment.
+        :return:
+        """
+        attributes = {
+            "value": value,
+        }
+        return self.create('Item', item_id, attributes)
+
+    def add_comment_to_app(self, app_id, value):
+        """
+        Shortcut method to create a comment on an app, using all default
+          values except the comment text.
+        :param app_id: int The Podio id of the application.
+        :param value: str The text of the comment.
+        :return:
+        """
+        attributes = {
+            "value": value,
+        }
+        return self.create('App', app_id, attributes)
