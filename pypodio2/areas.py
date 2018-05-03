@@ -657,8 +657,23 @@ class View(Area):
 class Comment(Area):
     def create(self, commentable_type, commentable_id, attributes):
         """
+        According to a recent error message (2018-05-03), commentable_type
+          must be one of the following:
 
-        :param commentable_type: str Either "Item" or "App"
+        ['comment', 'rating', 'invoice', 'campaign', 'app_revision', 'app',
+        'share', 'system', 'hook', 'tag', 'voucher', 'file', 'flow_effect',
+        'vote', 'partner', 'message', 'conversation', 'share_install', 'form',
+        'space_member_request', 'space', 'notification', 'auth_client',
+        'question', 'integration', 'payment', 'subscription', 'live', 'label',
+        'answer', 'icon', 'location', 'status', 'org_member', 'widget',
+        'extension_installation', 'file_service', 'app_field', 'alert',
+        'profile', 'user', 'task_action', 'org', 'condition_set', 'embed',
+        'condition', 'space_member', 'identity', 'item_participation', 'task',
+        'extension', 'linked_account', 'grant', 'flow', 'batch', 'contract',
+        'project', 'item', 'connection', 'flow_condition', 'question_answer',
+        'action', 'item_revision', 'voting', 'promotion', 'bulletin', 'view']
+
+        :param commentable_type: str Either "item" or "app" (docs are poor)
         :param commentable_id: int The unique id for the object to comment on
         :param attributes: dict Key-Value pairs like "value"
         :return:
@@ -678,7 +693,7 @@ class Comment(Area):
         attributes = {
             "value": value,
         }
-        return self.create('Item', item_id, attributes)
+        return self.create('item', item_id, attributes)
 
     def add_comment_to_app(self, app_id, value):
         """
@@ -691,4 +706,4 @@ class Comment(Area):
         attributes = {
             "value": value,
         }
-        return self.create('App', app_id, attributes)
+        return self.create('app', app_id, attributes)
