@@ -271,6 +271,12 @@ class Task(Area):
         """
         return self.transport.GET('/task/', **kwargs)
 
+    def get_summary_for_reference(self, ref_type, ref_id):
+        """
+        Returns the task summary for the given object.
+        """
+        return self.transport.GET('/task/%s/%s/summary' % (ref_type, ref_id))
+
     def delete(self, task_id):
         """
         Deletes the app with the given id.
