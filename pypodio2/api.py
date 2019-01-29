@@ -35,5 +35,5 @@ def AuthorizingClient(domain, auth, user_agent=None, app_id=None):
     """Creates a Podio client using an auth object."""
     http_transport = transport.HttpTransport(domain, build_headers(auth, user_agent))
     client_ = client.Client(http_transport)
-    c.app_id = app_id
-    return c
+    client_.app_id = app_id
+    return client_
