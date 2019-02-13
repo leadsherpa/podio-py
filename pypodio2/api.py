@@ -28,10 +28,12 @@ def OAuthAppClient(client_id, client_secret, app_id, app_token, user_agent=None,
     auth = transport.OAuthAppAuthorization(app_id, app_token,
                                            client_id, client_secret, domain)
 
-    return AuthorizingClient(domain, auth, user_agent=user_agent)
+    return AuthorizingClient(domain, auth, user_agent=user_agent, app_id=app_id)
 
 
-def AuthorizingClient(domain, auth, user_agent=None):
+def AuthorizingClient(domain, auth, user_agent=None, app_id=None):
     """Creates a Podio client using an auth object."""
     http_transport = transport.HttpTransport(domain, build_headers(auth, user_agent))
-    return client.Client(http_transport)
+    client_ = client.Client(http_transport)
+    client_.app_id = app_id
+    return client_

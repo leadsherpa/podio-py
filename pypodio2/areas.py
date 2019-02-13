@@ -85,19 +85,36 @@ class Search(Area):
 
 
 class Item(Area):
-    def find(self, item_id, basic=False, **kwargs):
+    def find(self, item_id, **kwargs):
         """
-        Get item
-        
-        :param item_id: Item ID
-        :param basic: ?
+        Get an item using its absolute Podio id. This is sometimes contained
+        in responses as 'ref_id' or you can find it by viewing the item on
+        the Podio web application and choosing Developer Info from the navbar
+        dropdown at the top.
+        :param item_id: The absolute Podio id for the item
         :type item_id: int
-        :return: Item info
+        :return: Deeply-nested dictionary representing Podio item
         :rtype: dict
         """
-        if basic:
-            return self.transport.GET(url='/item/%d/basic' % item_id)
         return self.transport.GET(kwargs, url='/item/%d' % item_id)
+
+    def get_by_app_item_id(self, app_id, app_item_id):
+        """
+        Get an item using its app_id and its app_item_id.
+        The app_item_id is much easier to find, and is included in most
+        queries as the id_field. You can choose to show it on the web
+        interface under the wrench icon. For each app it starts with 1
+        and increments (so look for low numbers and you've got it).
+        :param app_id: Id of the app for the item.
+        :type app_id: int
+        :type app_id: basestring
+        :param app_item_id: Id of the item within the specified app
+        :type app_item_id: int
+        :type app_item_id: basestring
+        :return: Deeply-nested dictionary representing Podio item
+        :rtype: dict
+        """
+        return self.transport.GET(url=' /app/{}/item/{}'.format(app_id, app_item_id))
 
     def filter(self, app_id, attributes, **kwargs):
         if not isinstance(attributes, dict):
@@ -317,6 +334,9 @@ class Org(Area):
     def get_all(self):
         return self.transport.get(url='/org/')
 
+    def get_members(self, org_id):
+        return self.transport.get(url='/org/{}/member'.format(org_id))
+
 
 class Status(Area):
     def find(self, status_id):
@@ -356,6 +376,18 @@ class Space(Area):
         :rtype: dict
         """
         return self.transport.GET(url='/org/%s/space/' % org_id)
+
+    def space_members(self, space_id):
+        """
+        Get a list of active members for a Space.
+        https://developers.podio.com/doc/space-members/get-members-of-space-22395
+        :param space_id: The unique ID for the space you're asking about
+        :type space_id: int
+        :type space_id: basestring
+        :return: A list of User object dictionaries.
+        :rtype: list
+        """
+        return self.transport.GET(url='/space/{}/member'.format(space_id))
 
     def create(self, attributes):
         """
@@ -626,3 +658,58 @@ class View(Area):
         attribute_data = json.dumps(attributes)
         return self.transport.PUT(url='/view/{}'.format(view_id),
                                   body=attribute_data, type='application/json')
+
+
+class Comment(Area):
+    def create(self, commentable_type, commentable_id, attributes):
+        """
+        According to a recent error message (2018-05-03), commentable_type
+          must be one of the following:
+
+        ['comment', 'rating', 'invoice', 'campaign', 'app_revision', 'app',
+        'share', 'system', 'hook', 'tag', 'voucher', 'file', 'flow_effect',
+        'vote', 'partner', 'message', 'conversation', 'share_install', 'form',
+        'space_member_request', 'space', 'notification', 'auth_client',
+        'question', 'integration', 'payment', 'subscription', 'live', 'label',
+        'answer', 'icon', 'location', 'status', 'org_member', 'widget',
+        'extension_installation', 'file_service', 'app_field', 'alert',
+        'profile', 'user', 'task_action', 'org', 'condition_set', 'embed',
+        'condition', 'space_member', 'identity', 'item_participation', 'task',
+        'extension', 'linked_account', 'grant', 'flow', 'batch', 'contract',
+        'project', 'item', 'connection', 'flow_condition', 'question_answer',
+        'action', 'item_revision', 'voting', 'promotion', 'bulletin', 'view']
+
+        :param commentable_type: str Either "item" or "app" (docs are poor)
+        :param commentable_id: int The unique id for the object to comment on
+        :param attributes: dict Key-Value pairs like "value"
+        :return:
+        """
+        attributes = json.dumps(attributes)
+        return self.transport.POST(url='/comment/%s/%s/' % (commentable_type, commentable_id),
+                                   body=attributes, type='application/json')
+
+    def add_comment_to_item(self, item_id, value):
+        """
+        Shortcut method to create a comment on an item, using all default
+          values except the comment text.
+        :param item_id: int The Podio id of the item.
+        :param value: str The text of the comment.
+        :return:
+        """
+        attributes = {
+            "value": value,
+        }
+        return self.create('item', item_id, attributes)
+
+    def add_comment_to_app(self, app_id, value):
+        """
+        Shortcut method to create a comment on an app, using all default
+          values except the comment text.
+        :param app_id: int The Podio id of the application.
+        :param value: str The text of the comment.
+        :return:
+        """
+        attributes = {
+            "value": value,
+        }
+        return self.create('app', app_id, attributes)

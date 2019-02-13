@@ -20,6 +20,7 @@ class Client(object):
 
     def __init__(self, transport):
         self.transport = transport
+        self.app_id = None
 
     def __getattr__(self, name):
         new_trans = self.transport

@@ -20,10 +20,6 @@ def test_find():
     result = client.Item.find(item_id)
     check_assertions(result, 'GET', '/item/%s' % item_id)
 
-    client, check_assertions = check_client_method()
-    result = client.Item.find(item_id, basic=True)
-    check_assertions(result, 'GET', '/item/%s/basic' % item_id)
-
 
 def test_filters():
     app_id = 426
@@ -101,7 +97,6 @@ def test_values_v2():
 
 
 def test_create():
-
     app_id = 1
     attributes = {'1': 1, '2': 3, '5': '8'}
 
