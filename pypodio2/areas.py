@@ -384,6 +384,8 @@ class Space(Area):
         :param space_id: The unique ID for the space you're asking about
         :type space_id: int
         :type space_id: basestring
+        :param role: (optional) If specified only members with the given role
+            are returned. Possible values: admin, regular, light.
         :type role: None
         :type role: basestring
         :return: A list of User object dictionaries.
