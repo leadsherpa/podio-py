@@ -334,8 +334,8 @@ class Org(Area):
     def get_all(self):
         return self.transport.get(url='/org/')
 
-    def get_members(self, org_id):
-        return self.transport.get(url='/org/{}/member'.format(org_id))
+    def get_members(self, org_id, **kwargs):
+        return self.transport.get(url='/org/{}/member'.format(org_id), **kwargs)
 
 
 class Status(Area):
