@@ -334,8 +334,8 @@ class Org(Area):
     def get_all(self):
         return self.transport.get(url='/org/')
 
-    def get_members(self, org_id):
-        return self.transport.get(url='/org/{}/member'.format(org_id))
+    def get_members(self, org_id, **kwargs):
+        return self.transport.get(url='/org/{}/member'.format(org_id), **kwargs)
 
 
 class Status(Area):
@@ -377,17 +377,29 @@ class Space(Area):
         """
         return self.transport.GET(url='/org/%s/space/' % org_id)
 
-    def space_members(self, space_id):
+    def space_members(self, space_id, role=None, **kwargs):
         """
         Get a list of active members for a Space.
         https://developers.podio.com/doc/space-members/get-members-of-space-22395
         :param space_id: The unique ID for the space you're asking about
         :type space_id: int
         :type space_id: basestring
+        :param role: (optional) If specified only members with the given role
+            are returned. Possible values: admin, regular, light.
+        :type role: None
+        :type role: basestring
         :return: A list of User object dictionaries.
         :rtype: list
         """
-        return self.transport.GET(url='/space/{}/member'.format(space_id))
+        url = '/space/{}/member'.format(space_id)
+        if role:
+            url = '{}/{}/'.format(url, role)
+        return self.transport.GET(url=url, **kwargs)
+
+    def update_role(self, space_id, user_id, role):
+        """Update a member's role."""
+        url = '/space/{}/member/{}'.format(space_id, user_id)
+        return self.transport.PUT(url=url, role=role)
 
     def create(self, attributes):
         """
