@@ -394,6 +394,11 @@ class Space(Area):
             url = '{}/{}/'.format(url, role)
         return self.transport.GET(url=url, **kwargs)
 
+    def update_role(self, space_id, user_id, role):
+        """Update a member's role."""
+        url = '/space/{}/member/{}'.format(space_id, user_id)
+        return self.transport.PUT(url=url, role=role)
+
     def create(self, attributes):
         """
         Create a new space
