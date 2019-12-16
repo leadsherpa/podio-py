@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import random
 import time
 from functools import wraps
 
@@ -17,32 +18,36 @@ import json
 class _retry:
     """Exponential backoff decorator for TransportExceptions."""
 
-    def __init__(self, retries, delay, backoff):
+    def __init__(self, retries, delay, backoff, cap):
         self.retries = retries
         self.delay = delay
         self.backoff = backoff
+        self.cap = cap
 
     def __call__(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            for try_num in range(self.retries):
+            for attempt in range(self.retries):
                 try:
                     return func(*args, **kwargs)
                 except TransportException as exc:
                     status = exc.status.status
-                    is_last_retry = try_num == self.retries - 1
-                    if is_last_retry:
+                    is_last_attempt = attempt == self.retries - 1
+                    if is_last_attempt:
                         raise
                     elif status >= 500:
-                        time.sleep(self._calc_delay(try_num))
+                        time.sleep(self._calc_delay(attempt))
                         continue
                     else:
                         raise
 
         return wrapper if self._retry_enabled else func
 
-    def _calc_delay(self, try_num):
-        return self.delay * pow(self.backoff, try_num)
+    def _calc_delay(self, attempt):
+        delay = self.delay * self.backoff ** attempt
+        delay = min(delay, self.cap)
+        delay = random.randint(0, delay)
+        return delay
 
     @property
     def _retry_enabled(self):
@@ -172,11 +177,13 @@ class HttpTransport(object):
         self._retry_retries = None
         self._retry_delay = None
         self._retry_backoff = None
+        self._retry_cap = None
 
-    def setup_retry(self, retries, delay, backoff):
+    def setup_retry(self, retries, delay, backoff, cap):
         self._retry_retries = retries
         self._retry_delay = delay
         self._retry_backoff = backoff
+        self._retry_cap = cap
 
     def __call__(self, *args, **kwargs):
         self._attribute_stack += [str(a) for a in args]
@@ -204,7 +211,7 @@ class HttpTransport(object):
         else:
             body = self._generate_body()  # hack
 
-        @_retry(self._retry_retries, self._retry_delay, self._retry_backoff)
+        @_retry(self._retry_retries, self._retry_delay, self._retry_backoff, self._retry_cap)
         def _request():
             response, data = self._http.request(url, self._method, body=body, headers=headers)
             self._attribute_stack = []
