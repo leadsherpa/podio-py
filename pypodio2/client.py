@@ -22,6 +22,9 @@ class Client(object):
         self.transport = transport
         self.app_id = None
 
+    def setup_retry(self, retries, delay, backoff, cap):
+        self.transport.setup_retry(retries, delay, backoff, cap)
+
     def __getattr__(self, name):
         new_trans = self.transport
         area = getattr(areas, name)

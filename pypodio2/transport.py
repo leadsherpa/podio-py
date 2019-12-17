@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import random
+import time
+from functools import wraps
+
 from httplib2 import Http
 
 try:
@@ -9,6 +13,45 @@ except ImportError:
 from .encode import multipart_encode
 
 import json
+
+
+class _retry:
+    """Exponential backoff decorator for TransportExceptions."""
+
+    def __init__(self, retries, delay, backoff, cap):
+        self.retries = retries
+        self.delay = delay
+        self.backoff = backoff
+        self.cap = cap
+
+    def __call__(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(self.retries):
+                try:
+                    return func(*args, **kwargs)
+                except TransportException as exc:
+                    status = exc.status.status
+                    is_last_attempt = attempt == self.retries - 1
+                    if is_last_attempt:
+                        raise
+                    elif status >= 500:
+                        time.sleep(self._calc_delay(attempt))
+                        continue
+                    else:
+                        raise
+
+        return wrapper if self._retry_enabled else func
+
+    def _calc_delay(self, attempt):
+        delay = self.delay * self.backoff ** attempt
+        delay = min(delay, self.cap)
+        delay = random.random() * delay
+        return delay
+
+    @property
+    def _retry_enabled(self):
+        return self.retries is not None and self.delay is not None and self.backoff is not None
 
 
 class OAuthToken(object):
@@ -131,6 +174,17 @@ class HttpTransport(object):
         self._stack_collapser = "/".join
         self._params_template = '?%s'
 
+        self._retry_retries = None
+        self._retry_delay = None
+        self._retry_backoff = None
+        self._retry_cap = None
+
+    def setup_retry(self, retries, delay, backoff, cap):
+        self._retry_retries = retries
+        self._retry_delay = delay
+        self._retry_backoff = backoff
+        self._retry_cap = cap
+
     def __call__(self, *args, **kwargs):
         self._attribute_stack += [str(a) for a in args]
         self._params = kwargs
@@ -156,11 +210,15 @@ class HttpTransport(object):
                 headers.update({'content-type': kwargs['type']})
         else:
             body = self._generate_body()  # hack
-        response, data = self._http.request(url, self._method, body=body, headers=headers)
 
-        self._attribute_stack = []
-        handler = kwargs.get('handler', _handle_response)
-        return handler(response, data)
+        @_retry(self._retry_retries, self._retry_delay, self._retry_backoff, self._retry_cap)
+        def _request():
+            response, data = self._http.request(url, self._method, body=body, headers=headers)
+            self._attribute_stack = []
+            handler = kwargs.get('handler', _handle_response)
+            return handler(response, data)
+
+        return _request()
 
     def _generate_params(self, params):
         body = self._params_template % urlencode(params)
