@@ -46,7 +46,7 @@ class _retry:
     def _calc_delay(self, attempt):
         delay = self.delay * self.backoff ** attempt
         delay = min(delay, self.cap)
-        delay = random.randint(0, delay)
+        delay = random.random() * delay
         return delay
 
     @property
