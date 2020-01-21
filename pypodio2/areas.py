@@ -337,6 +337,17 @@ class Org(Area):
     def get_members(self, org_id, **kwargs):
         return self.transport.get(url='/org/{}/member'.format(org_id), **kwargs)
 
+    def get_all_spaces(self, org_id, **kwargs):
+        """
+        Find all of the spaces in a given org.
+
+        :param org_id: Organization ID
+        :type org_id: str
+        :return: Details of spaces
+        :rtype: dict
+        """
+        return self.transport.GET(url='/org/%s/all_spaces/' % org_id, **kwargs)
+
 
 class Status(Area):
     def find(self, status_id):
@@ -414,6 +425,17 @@ class Space(Area):
             raise TypeError('Dictionary of values expected')
         attributes = json.dumps(attributes)
         return self.transport.POST(url='/space/', body=attributes, type='application/json')
+
+    def join(self, space_id):
+        """Join the open space with the given id."""
+        return self.transport.POST(url='/space/%s/join/' % space_id)
+
+    def request_membership(self, space_id):
+        """
+        Request access to a space the user doesn't have access to. All admins
+        of the space will get notified and can accept or ignore it.
+        """
+        return self.transport.POST(url='/space/%s/member_request/' % space_id)
 
 
 class Stream(Area):
