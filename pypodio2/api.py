@@ -23,6 +23,11 @@ def OAuthRefreshTokenClient(client_id, client_secret, refresh_token, user_agent=
     return AuthorizingClient(domain, auth, user_agent=user_agent)
 
 
+def OAuthFromExistingTokens(tokens, user_agent=None, domain="https://api.podio.com"):
+    auth = transport.OAuthAuthorizationFromTokens(tokens)
+    return AuthorizingClient(domain, auth, user_agent=user_agent)
+
+
 def OAuthAppClient(client_id, client_secret, app_id, app_token, user_agent=None,
                    domain="https://api.podio.com"):
     auth = transport.OAuthAppAuthorization(app_id, app_token,
@@ -36,4 +41,4 @@ def AuthorizingClient(domain, auth, user_agent=None, app_id=None):
     http_transport = transport.HttpTransport(domain, build_headers(auth, user_agent))
     client_ = client.Client(http_transport)
     client_.app_id = app_id
-    return client_
+    return client_, auth

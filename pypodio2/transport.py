@@ -72,6 +72,19 @@ class OAuthToken(object):
         return {'authorization': "OAuth2 %s" % self.access_token}
 
 
+class OAuthAuthorizationFromTokens(object):
+    """Generates headers for Podio OAuth2 with existing access/refresh tokens"""
+    def __init__(self, tokens):
+        self.token = OAuthToken({
+            'access_token': tokens.get('access'),
+            'refresh_token': tokens.get('refresh'),
+            'expires_in': tokens.get('expires_in')
+        })
+
+    def __call__(self):
+        return self.token.to_headers()
+
+
 class OAuthAuthorization(object):
     """Generates headers for Podio OAuth2 Authorization"""
 
@@ -85,7 +98,8 @@ class OAuthAuthorization(object):
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         response, data = h.request(domain + "/oauth/token", "POST",
                                    urlencode(body), headers=headers)
-        self.token = OAuthToken(_handle_response(response, data))
+        _, auth_data = _handle_response(response, data)
+        self.token = OAuthToken(auth_data)
 
     def __call__(self):
         return self.token.to_headers()
@@ -103,7 +117,8 @@ class OAuthRefreshTokenAuthorization(object):
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         response, data = http.request(domain + '/oauth/token', 'POST',
                                       urlencode(body), headers=headers)
-        self.token = OAuthToken(_handle_response(response, data))
+        _, auth_data = _handle_response(response, data)
+        self.token = OAuthToken(auth_data)
 
     def __call__(self):
         return self.token.to_headers()
@@ -121,7 +136,8 @@ class OAuthAppAuthorization(object):
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         response, data = h.request(domain + "/oauth/token", "POST",
                                    urlencode(body), headers=headers)
-        self.token = OAuthToken(_handle_response(response, data))
+        _, auth_data = _handle_response(response, data)
+        self.token = OAuthToken(auth_data)
 
     def __call__(self):
         return self.token.to_headers()
@@ -289,4 +305,4 @@ def _handle_response(response, data):
         data = data.decode("utf-8")
     if response.status >= 400:
         raise TransportException(response, data)
-    return json.loads(data)
+    return response, json.loads(data)
