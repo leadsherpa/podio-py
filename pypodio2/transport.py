@@ -3,7 +3,7 @@ import random
 import time
 from functools import wraps
 
-from httplib2 import Http
+import requests
 
 try:
     from urllib.parse import urlencode
@@ -31,7 +31,7 @@ class _retry:
                 try:
                     return func(*args, **kwargs)
                 except TransportException as exc:
-                    status = exc.status.status
+                    status = exc.status['status']
                     is_last_attempt = attempt == self.retries - 1
                     if is_last_attempt:
                         raise
@@ -94,11 +94,13 @@ class OAuthAuthorization(object):
                 'client_secret': secret,
                 'username': login,
                 'password': password}
-        h = Http()
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, data = h.request(domain + "/oauth/token", "POST",
-                                   urlencode(body), headers=headers)
-        _, auth_data = _handle_response(response, data)
+        response = requests.post(
+            domain + "/oauth/token",
+            data=urlencode(body),
+            headers=headers
+        )
+        _, auth_data = _handle_response(response)
         self.token = OAuthToken(auth_data)
 
     def __call__(self):
@@ -113,11 +115,13 @@ class OAuthRefreshTokenAuthorization(object):
                 'client_id': client_id,
                 'client_secret': client_secret,
                 'refresh_token': refresh_token}
-        http = Http()
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, data = http.request(domain + '/oauth/token', 'POST',
-                                      urlencode(body), headers=headers)
-        _, auth_data = _handle_response(response, data)
+        response = requests.post(
+            domain + '/oauth/token',
+            urlencode(body),
+            headers=headers
+        )
+        _, auth_data = _handle_response(response)
         self.token = OAuthToken(auth_data)
 
     def __call__(self):
@@ -132,11 +136,13 @@ class OAuthAppAuthorization(object):
                 'client_secret': secret,
                 'app_id': app_id,
                 'app_token': app_token}
-        h = Http()
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, data = h.request(domain + "/oauth/token", "POST",
-                                   urlencode(body), headers=headers)
-        _, auth_data = _handle_response(response, data)
+        response = request.post(
+            domain + "/oauth/token",
+            urlencode(body),
+            headers=headers
+        )
+        _, auth_data = _handle_response(response)
         self.token = OAuthToken(auth_data)
 
     def __call__(self):
@@ -167,10 +173,11 @@ class KeepAliveHeaders(object):
 
 class TransportException(Exception):
 
-    def __init__(self, status, content):
+    def __init__(self, response):
         super(TransportException, self).__init__()
-        self.status = status
-        self.content = content
+        self.status = dict(response.headers)
+        self.status['status'] = response.status_code
+        self.content = response.json()
 
     def __str__(self):
         return "TransportException(%s): %s" % (self.status, self.content)
@@ -184,7 +191,6 @@ class HttpTransport(object):
         self._attribute_stack = []
         self._method = "GET"
         self._posts = []
-        self._http = Http()
         self._params = {}
         self._url_template = '%(domain)s/%(generated_url)s'
         self._stack_collapser = "/".join
@@ -229,10 +235,10 @@ class HttpTransport(object):
 
         @_retry(self._retry_retries, self._retry_delay, self._retry_backoff, self._retry_cap)
         def _request():
-            response, data = self._http.request(url, self._method, body=body, headers=headers)
+            response = getattr(requests, self._method.lower())(url, data=body, headers=headers)
             self._attribute_stack = []
             handler = kwargs.get('handler', _handle_response)
-            return handler(response, data)
+            return handler(response)
 
         return _request()
 
@@ -298,11 +304,12 @@ class HttpTransport(object):
         return self
 
 
-def _handle_response(response, data):
-    if not data:
-        data = '{}'
-    else:
-        data = data.decode("utf-8")
-    if response.status >= 400:
-        raise TransportException(response, data)
-    return response, json.loads(data)
+def _handle_response(response):
+    """Takes a requests RESPONSE object"""
+    try:
+        data = response.json()
+    except json.decoder.JSONDecodeError:
+        data = {}
+    if response.status_code >= 400:
+        raise TransportException(response)
+    return response, data
