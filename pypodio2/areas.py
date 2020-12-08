@@ -175,6 +175,16 @@ class Item(Area):
 
 
 class Application(Area):
+    def export_items_xlsx(self, app_id, view_id=None):
+        attributes = {}
+
+        if view_id:
+            attributes['view_id'] = view_id
+        return self.transport.GET(
+            url=" /item/app/%s/xlsx/" % app_id,
+            **attributes
+        )
+
     def activate(self, app_id):
         """
         Activates the application with app_id

@@ -173,11 +173,10 @@ class KeepAliveHeaders(object):
 
 class TransportException(Exception):
 
-    def __init__(self, response):
+    def __init__(self, status, content):
         super(TransportException, self).__init__()
-        self.status = dict(response.headers)
-        self.status['status'] = response.status_code
-        self.content = response.json()
+        self.status = status
+        self.content = content
 
     def __str__(self):
         return "TransportException(%s): %s" % (self.status, self.content)
@@ -309,7 +308,15 @@ def _handle_response(response):
     try:
         data = response.json()
     except json.decoder.JSONDecodeError:
-        data = {}
+        if response.headers.get('Content-Type') != "application/json":
+            data = response.content
+        else:
+            data = {}
+
     if response.status_code >= 400:
-        raise TransportException(response)
+        status = dict(response.headers)
+        status['status'] = response.status_code
+        content = response.json() or response.content
+
+        raise TransportException(status, content)
     return response, data
