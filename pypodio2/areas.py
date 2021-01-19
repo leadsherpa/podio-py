@@ -757,3 +757,14 @@ class Comment(Area):
             "value": value,
         }
         return self.create('app', app_id, attributes)
+
+    def get_comments(self, object_type, object_id, limit=100, offset=0):
+        return self.transport.GET(
+            url='/comment/%s/%s?limit=%s&offset=%s' % (object_type, object_id, limit, offset)
+        )
+
+    def get_comments_for_item(self, object_id, limit=100, offset=0):
+        return self.get_comments('item', object_id, limit, offset)
+
+    def get_comments_for_app(self, object_id, limit=100, offset=0):
+        return self.get_comments('app', object_id, limit, offset)
